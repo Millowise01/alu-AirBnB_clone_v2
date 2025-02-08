@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# This script sets up web servers for the deployment of web_static
+# Sets up web servers for deploying web_static
 
-# Install Nginx if it is not already installed
+# Install Nginx if not already installed
 if ! command -v nginx &> /dev/null; then
-    sudo apt-get update
+    sudo apt-get update -y
     sudo apt-get install -y nginx
 fi
 
-# Create necessary directories
+# Create required directories
 sudo mkdir -p /data/web_static/releases/test/
 sudo mkdir -p /data/web_static/shared/
 
@@ -20,26 +20,20 @@ echo "<html>
   </body>
 </html>" | sudo tee /data/web_static/releases/test/index.html > /dev/null
 
-# Create or recreate the symbolic link
-if [ -L /data/web_static/current ]; then
-    sudo rm /data/web_static/current
-fi
+# Create symbolic link (force replace if exists)
 sudo ln -sf /data/web_static/releases/test/ /data/web_static/current
 
-# Set ownership of the /data folder to ubuntu user and group
+# Give ownership of /data/ to ubuntu user and group
 sudo chown -R ubuntu:ubuntu /data/
 
-# Update Nginx configuration to serve the content
-nginx_config="/etc/nginx/sites-available/default"
-if ! grep -q "location /hbnb_static/" "$nginx_config"; then
-    sudo sed -i '/server_name _;/a \
-        location /hbnb_static/ { \
-            alias /data/web_static/current/; \
-        }' "$nginx_config"
+# Update Nginx configuration to serve /data/web_static/current/ as /hbnb_static
+CONFIG_FILE="/etc/nginx/sites-available/default"
+if ! grep -q "location /hbnb_static" "$CONFIG_FILE"; then
+    sudo sed -i "/server_name _;/a \\
+\tlocation /hbnb_static/ {\n\t\talias /data/web_static/current/;\n\t}\n" "$CONFIG_FILE"
 fi
 
 # Restart Nginx to apply changes
 sudo service nginx restart
 
-# Exit successfully
 exit 0
