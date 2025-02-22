@@ -1,3 +1,4 @@
+"""Module providing a function printing python version."""
 from flask import Flask, render_template
 from models import storage
 from models.state import State
